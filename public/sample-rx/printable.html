@@ -1,0 +1,264 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nuskha test prescriptions (printable)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600&family=Kalam:wght@400&family=Reenie+Beanie&family=Nothing+You+Could+Do&family=Noto+Serif:wght@600;700&family=Noto+Sans:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  /* Test fixtures for the Nuskha extraction pipeline.
+     Each pad is A5. Handwriting gets harder from pad 1 to pad 4. */
+  @page { size: A5 portrait; margin: 0; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: #e7e2d6;
+    font-family: "Noto Sans", system-ui, sans-serif;
+    color: #1f2a24;
+  }
+  .howto {
+    max-width: 148mm;
+    margin: 24px auto;
+    padding: 16px 20px;
+    background: #fffdf8;
+    border: 1px solid #d8d0bd;
+    font-size: 15px;
+    line-height: 1.55;
+  }
+  .howto h1 { font-size: 20px; margin: 0 0 8px; color: #14532d; }
+  .howto ol { margin: 8px 0 0; padding-left: 20px; }
+  .howto button {
+    margin-top: 12px; min-height: 44px; padding: 0 20px;
+    font: 600 16px "Noto Sans", sans-serif;
+    background: #14532d; color: #fff; border: 0; border-radius: 6px; cursor: pointer;
+  }
+  .howto button:hover { background: #0c3a1f; }
+  .howto button:focus-visible { outline: 3px solid #d97706; outline-offset: 3px; }
+
+  .pad {
+    width: 148mm;
+    height: 210mm;
+    margin: 24px auto;
+    background: #fffef9;
+    position: relative;
+    padding: 12mm 12mm 10mm;
+    box-shadow: 0 1px 3px rgba(0,0,0,.18);
+    overflow: hidden;
+    page-break-after: always;
+    break-after: page;
+  }
+  .letterhead {
+    border-bottom: 2px solid #1e3a5f;
+    padding-bottom: 4mm;
+    display: flex; justify-content: space-between; align-items: flex-end;
+  }
+  .clinic { font: 700 19px "Noto Serif", serif; color: #1e3a5f; }
+  .clinic small { display: block; font: 400 11px "Noto Sans", sans-serif; color: #44546a; margin-top: 2px; }
+  .doc { text-align: right; font: 600 12px "Noto Sans", sans-serif; color: #1e3a5f; }
+  .doc small { display: block; font-weight: 400; color: #44546a; }
+  .meta {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 3mm 8mm;
+    margin-top: 5mm; font-size: 11px; color: #44546a;
+  }
+  .meta div { border-bottom: 1px dotted #9aa6b5; padding-bottom: 1mm; min-height: 7mm; position: relative; }
+  .meta .fill { position: absolute; left: 22mm; bottom: 0; color: #1d3a8a; }
+  .rx-mark { font: 700 34px "Noto Serif", serif; color: #1e3a5f; margin: 6mm 0 2mm; }
+  .lines { color: #1d3a8a; } /* ballpoint blue */
+  .line { margin: 0 0 5mm; transform-origin: left center; }
+  .line .dose { margin-left: 6mm; white-space: nowrap; }
+  .note { margin-top: 6mm; color: #1d3a8a; }
+  .sign { position: absolute; right: 14mm; bottom: 24mm; color: #1d3a8a; text-align: center; }
+  .sign .scrawl { font-size: 30px; }
+  .sign small { display: block; font: 400 10px "Noto Sans", sans-serif; color: #44546a; border-top: 1px solid #9aa6b5; padding-top: 1mm; margin-top: -2mm; }
+  .testlabel {
+    position: absolute; left: 12mm; right: 12mm; bottom: 7mm;
+    font: 600 9.5px "Noto Sans", sans-serif; color: #8a2a1c;
+    border-top: 1px solid #e3c9c2; padding-top: 2mm; text-align: center;
+  }
+
+  /* Handwriting difficulty levels */
+  .h1 { font-family: "Caveat", cursive; font-weight: 600; font-size: 24px; }
+  .h2 { font-family: "Kalam", cursive; font-size: 19px; }
+  .h3 { font-family: "Reenie Beanie", cursive; font-size: 27px; }
+  .h4 { font-family: "Nothing You Could Do", cursive; font-size: 17px; letter-spacing: .3px; }
+
+  .key {
+    width: 148mm; margin: 24px auto; background: #fffdf8; border: 1px solid #d8d0bd;
+    padding: 12mm; font-size: 12.5px; line-height: 1.5;
+  }
+  .key h2 { color: #14532d; font-size: 17px; margin: 0 0 4mm; }
+  .key h3 { color: #14532d; font-size: 14px; margin: 5mm 0 1mm; }
+  .key table { width: 100%; border-collapse: collapse; }
+  .key td, .key th { text-align: left; border-bottom: 1px solid #e6dfcd; padding: 1.2mm 1mm; vertical-align: top; }
+  .key th { color: #51605a; font-weight: 600; }
+  .key .flag { color: #8a2a1c; font-weight: 600; }
+
+  @media print {
+    body { background: none; }
+    .howto { display: none; }
+    .pad, .key { margin: 0; box-shadow: none; border: 0; }
+  }
+</style>
+</head>
+<body>
+
+<section class="howto">
+  <h1>Nuskha test prescriptions</h1>
+  <p>Four practice prescriptions for testing the photo reader. These are test sheets only. They are not real prescriptions.</p>
+  <ol>
+    <li>Print on A5, or on A4 at "fit to page". Ordinary paper is fine.</li>
+    <li>Photograph each sheet with your phone, in daylight, with the whole page in the frame.</li>
+    <li>Upload the photo in Nuskha with "Scan a prescription".</li>
+    <li>Compare the result with the answer key on the last page.</li>
+  </ol>
+  <p>Handwriting gets harder from sheet 1 to sheet 4. If you cannot print, you can also photograph this screen.</p>
+  <button type="button" onclick="window.print()">Print all sheets</button>
+</section>
+
+<!-- Sheet 1: easiest handwriting. Clean case, no warnings expected. -->
+<article class="pad" id="rx-1">
+  <header class="letterhead">
+    <div class="clinic">Sample Family Clinic<small>Test sheet 1 of 4 · For Nuskha testing</small></div>
+    <div class="doc">Dr. Sample Physician<small>MBBS (test sheet)</small></div>
+  </header>
+  <div class="meta">
+    <div>Patient:<span class="fill h1" style="font-size:20px">Test Patient</span></div>
+    <div>Date:<span class="fill h1" style="font-size:20px">17/10/26</span></div>
+    <div>Age:<span class="fill h1" style="font-size:20px">34 y</span></div>
+    <div>Complaint:<span class="fill h1" style="font-size:20px">throat infection</span></div>
+  </div>
+  <div class="rx-mark">℞</div>
+  <div class="lines h1">
+    <p class="line" style="transform:rotate(-0.6deg)">1. Tab. Zithromax 500mg <span class="dose">1+0+0</span> x 3 days</p>
+    <p class="line" style="transform:rotate(0.4deg)">2. Tab. Motilium 10mg <span class="dose">1+1+1</span> before meal</p>
+    <p class="line" style="transform:rotate(-0.3deg)">3. Tab. Surbex Z <span class="dose">0+1+0</span> after lunch</p>
+  </div>
+  <p class="note h1" style="font-size:20px">Warm water gargles. Review if fever.</p>
+  <div class="sign"><span class="scrawl h3">S. Physician</span><small>Signature</small></div>
+  <p class="testlabel">TEST SHEET FOR NUSKHA. NOT A REAL PRESCRIPTION. DO NOT USE TO BUY MEDICINE.</p>
+</article>
+
+<!-- Sheet 2: medium handwriting. The hidden double paracetamol case. -->
+<article class="pad" id="rx-2">
+  <header class="letterhead">
+    <div class="clinic">Sample Medical Centre<small>Test sheet 2 of 4 · For Nuskha testing</small></div>
+    <div class="doc">Dr. Sample General Practitioner<small>MBBS, FCPS (test sheet)</small></div>
+  </header>
+  <div class="meta">
+    <div>Patient:<span class="fill h2" style="font-size:17px">Test Patient</span></div>
+    <div>Date:<span class="fill h2" style="font-size:17px">17-10-2026</span></div>
+    <div>Age:<span class="fill h2" style="font-size:17px">61 y</span></div>
+    <div>Complaint:<span class="fill h2" style="font-size:17px">flu, fever, acidity</span></div>
+  </div>
+  <div class="rx-mark">℞</div>
+  <div class="lines h2">
+    <p class="line" style="transform:rotate(-1deg)">Tab Panadol 500mg <span class="dose">1 + 1 + 1</span></p>
+    <p class="line" style="transform:rotate(0.8deg)">Tab Panadol CF <span class="dose">1 + 0 + 1</span> x 5 d</p>
+    <p class="line" style="transform:rotate(-0.5deg)">Cap Risek 20mg <span class="dose">1 + 0 + 0</span> empty stomach</p>
+    <p class="line" style="transform:rotate(0.6deg)">Tab Augmentin 625mg <span class="dose">1 + 0 + 1</span> x 7 d</p>
+  </div>
+  <p class="note h2" style="font-size:16px">Plenty of fluids. Complete antibiotic course.</p>
+  <div class="sign"><span class="scrawl h3">Dr. S. GP</span><small>Signature</small></div>
+  <p class="testlabel">TEST SHEET FOR NUSKHA. NOT A REAL PRESCRIPTION. DO NOT USE TO BUY MEDICINE.</p>
+</article>
+
+<!-- Sheet 3: hard handwriting. Bleeding-risk interaction for an elderly heart patient. -->
+<article class="pad" id="rx-3">
+  <header class="letterhead">
+    <div class="clinic">Sample Heart &amp; Medical Clinic<small>Test sheet 3 of 4 · For Nuskha testing</small></div>
+    <div class="doc">Dr. Sample Cardiologist<small>MBBS, FCPS (test sheet)</small></div>
+  </header>
+  <div class="meta">
+    <div>Patient:<span class="fill h3" style="font-size:24px">Test Patient</span></div>
+    <div>Date:<span class="fill h3" style="font-size:24px">17/10/26</span></div>
+    <div>Age:<span class="fill h3" style="font-size:24px">72 y</span></div>
+    <div>Complaint:<span class="fill h3" style="font-size:24px">diarrhoea, AF</span></div>
+  </div>
+  <div class="rx-mark">℞</div>
+  <div class="lines h3">
+    <p class="line" style="transform:rotate(-1.4deg)">T. Warf 5mg <span class="dose">0 - 0 - 1</span> (continue)</p>
+    <p class="line" style="transform:rotate(1deg)">T. Flagyl 400mg <span class="dose">1 - 1 - 1</span> x 5 days</p>
+    <p class="line" style="transform:rotate(-0.8deg)">T. Concor 5mg <span class="dose">1 - 0 - 0</span></p>
+    <p class="line" style="transform:rotate(0.9deg)">T. Lipiget 20mg <span class="dose">0 - 0 - 1</span></p>
+  </div>
+  <p class="note h3" style="font-size:24px">ORS. INR check after 3 days.</p>
+  <div class="sign"><span class="scrawl h4" style="font-size:22px">S.Card</span><small>Signature</small></div>
+  <p class="testlabel">TEST SHEET FOR NUSKHA. NOT A REAL PRESCRIPTION. DO NOT USE TO BUY MEDICINE.</p>
+</article>
+
+<!-- Sheet 4: hardest handwriting. Diabetic with blood pressure: two caution interactions. -->
+<article class="pad" id="rx-4">
+  <header class="letterhead">
+    <div class="clinic">Sample Diabetes Clinic<small>Test sheet 4 of 4 · For Nuskha testing</small></div>
+    <div class="doc">Dr. Sample Consultant<small>MBBS, MRCP (test sheet)</small></div>
+  </header>
+  <div class="meta">
+    <div>Patient:<span class="fill h4" style="font-size:15px">Test Patient</span></div>
+    <div>Date:<span class="fill h4" style="font-size:15px">17.10.26</span></div>
+    <div>Age:<span class="fill h4" style="font-size:15px">58 y</span></div>
+    <div>Complaint:<span class="fill h4" style="font-size:15px">DM, HTN, knee</span></div>
+  </div>
+  <div class="rx-mark">℞</div>
+  <div class="lines h4">
+    <p class="line" style="transform:rotate(-1.6deg)">Tab Glucophage 500mg <span class="dose">1+0+1</span> with meals</p>
+    <p class="line" style="transform:rotate(1.2deg)">Tab Amaryl 2mg <span class="dose">1+0+0</span> before brkfst</p>
+    <p class="line" style="transform:rotate(-1deg)">Tab Coversyl 4mg <span class="dose">1+0+0</span></p>
+    <p class="line" style="transform:rotate(1.4deg)">Tab Aldactone 25mg <span class="dose">1+0+0</span></p>
+    <p class="line" style="transform:rotate(-1.2deg)">Tab Brufen 400mg <span class="dose">1+0+1</span> x 5d</p>
+  </div>
+  <p class="note h4" style="font-size:15px">Check sugar daily. Follow up 2 wks.</p>
+  <div class="sign"><span class="scrawl h4" style="font-size:22px">S.Cons</span><small>Signature</small></div>
+  <p class="testlabel">TEST SHEET FOR NUSKHA. NOT A REAL PRESCRIPTION. DO NOT USE TO BUY MEDICINE.</p>
+</article>
+
+<!-- Answer key: ground truth for checking extraction and safety flags. -->
+<section class="key" id="answer-key">
+  <h2>Answer key</h2>
+  <p>What Nuskha should read from each sheet, and which warnings it should raise. Schedule is morning, afternoon, night.</p>
+
+  <h3>Sheet 1 · easiest · no warnings expected</h3>
+  <table>
+    <tr><th>Medicine</th><th>Strength</th><th>Schedule</th></tr>
+    <tr><td>Zithromax</td><td>500mg</td><td>1 + 0 + 0</td></tr>
+    <tr><td>Motilium</td><td>10mg</td><td>1 + 1 + 1</td></tr>
+    <tr><td>Surbex Z</td><td></td><td>0 + 1 + 0</td></tr>
+  </table>
+  <p>Expected: no danger or caution flags. Tests that Nuskha raises no false alarms.</p>
+
+  <h3>Sheet 2 · medium · 1 danger expected</h3>
+  <table>
+    <tr><th>Medicine</th><th>Strength</th><th>Schedule</th></tr>
+    <tr><td>Panadol</td><td>500mg</td><td>1 + 1 + 1</td></tr>
+    <tr><td>Panadol CF</td><td></td><td>1 + 0 + 1</td></tr>
+    <tr><td>Risek</td><td>20mg</td><td>1 + 0 + 0</td></tr>
+    <tr><td>Augmentin</td><td>625mg</td><td>1 + 0 + 1</td></tr>
+  </table>
+  <p class="flag">Danger: paracetamol appears more than once (Panadol and Panadol CF).</p>
+
+  <h3>Sheet 3 · hard · 1 danger expected</h3>
+  <table>
+    <tr><th>Medicine</th><th>Strength</th><th>Schedule</th></tr>
+    <tr><td>Warf</td><td>5mg</td><td>0 + 0 + 1</td></tr>
+    <tr><td>Flagyl</td><td>400mg</td><td>1 + 1 + 1</td></tr>
+    <tr><td>Concor</td><td>5mg</td><td>1 + 0 + 0</td></tr>
+    <tr><td>Lipiget</td><td>20mg</td><td>0 + 0 + 1</td></tr>
+  </table>
+  <p class="flag">Danger: Flagyl plus warfarin (bleeding risk).</p>
+
+  <h3>Sheet 4 · hardest · 2 cautions expected</h3>
+  <table>
+    <tr><th>Medicine</th><th>Strength</th><th>Schedule</th></tr>
+    <tr><td>Glucophage</td><td>500mg</td><td>1 + 0 + 1</td></tr>
+    <tr><td>Amaryl</td><td>2mg</td><td>1 + 0 + 0</td></tr>
+    <tr><td>Coversyl</td><td>4mg</td><td>1 + 0 + 0</td></tr>
+    <tr><td>Aldactone</td><td>25mg</td><td>1 + 0 + 0</td></tr>
+    <tr><td>Brufen</td><td>400mg</td><td>1 + 0 + 1</td></tr>
+  </table>
+  <p class="flag">Caution: ibuprofen with blood pressure pills (Brufen and Coversyl).</p>
+  <p class="flag">Caution: spironolactone plus blood pressure pills (Aldactone and Coversyl).</p>
+</section>
+
+</body>
+</html>

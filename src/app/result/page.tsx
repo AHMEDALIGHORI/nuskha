@@ -160,7 +160,7 @@ export default function ResultPage() {
 
               {med.generics.length > 0 && (
                 <div className="mt-4 rounded-md bg-paper p-4">
-                  <p className="text-sm font-semibold uppercase tracking-wide text-ink-soft">
+                  <p className="text-base font-semibold text-ink-soft">
                     Cheaper registered options
                   </p>
                   {med.generics.map((g) => (

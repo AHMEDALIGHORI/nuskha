@@ -154,7 +154,7 @@ export default function Home() {
               </div>
 
               <div className="mt-10">
-                <p className="text-sm font-semibold uppercase tracking-wide text-ink-soft">
+                <p className="text-base font-semibold text-ink-soft">
                   No prescription handy? Try a labeled sample:
                 </p>
                 <div className="mt-3 flex flex-wrap gap-3">
@@ -172,6 +172,17 @@ export default function Home() {
                     </button>
                   ))}
                 </div>
+                <p className="mt-4 text-base text-ink-soft">
+                  Want to test the camera?{" "}
+                  <a
+                    href="/sample-rx/printable.html"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex min-h-11 items-center font-medium text-brand underline underline-offset-4 hover:text-brand-deep"
+                  >
+                    Print a handwritten test sheet
+                  </a>
+                </p>
               </div>
 
               <AnimatePresence>
