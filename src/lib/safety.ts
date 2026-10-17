@@ -175,14 +175,16 @@ export function computeFlags(
     if (seenPairs.has(key)) continue;
     seenPairs.add(key);
     const involved = [...new Set([...aIdx, ...bIdx])];
-    const names = involved.map((i) => matched[i]?.brand ?? extracted[i].name).join(" and ");
+    const brands = involved.map((i) => matched[i]?.brand ?? extracted[i].name);
+    const names = brands.join(" and ");
+    const namesUr = brands.join(" اور ");
     flags.push({
       severity: inter.severity,
       kind: "interaction",
       titleEn: inter.titleEn,
       titleUr: inter.titleUr,
       detailEn: `${inter.detailEn} On your paper: ${names}.`,
-      detailUr: `${inter.detailUr} آپ کے نسخے میں: ${names}۔`,
+      detailUr: `${inter.detailUr} آپ کے نسخے میں: ${namesUr}۔`,
       medicineIndices: involved,
     });
   }

@@ -42,7 +42,7 @@ Extract every medicine on it. For each one return:
 - name: the brand or generic name exactly as written, without dosage-form prefixes like Tab, Cap, Syp, Inj or T.
 - strength: the dose, like 500mg, if shown.
 - schedule: three booleans [morning, afternoon, night]. Pakistani doctors write this as 1+0+1 or 1-0-1, or as marks over three columns. A 1 or a mark means a dose at that time; 0 means none.
-- instructions: anything written about food, duration, or use, such as "after meal" or "x 5 days".
+- instructions: anything written about food, duration, or use of that medicine, such as "after meal" or "x 5 days". Leave it empty if nothing is written for that medicine. Never put lab tests or follow-up notes here, such as "INR check after 3 days", "repeat CBC" or "review after a week", even when they share a line with the medicine.
 - confidence: how sure you are that you read the name correctly.
 Rules: return only medicines. Skip patient names, dates, clinic details, advice lines and signatures. If a word is unclear, make your best guess and lower the confidence. Never invent a medicine that is not on the paper. If the photo is not a prescription, return an empty list.`;
 

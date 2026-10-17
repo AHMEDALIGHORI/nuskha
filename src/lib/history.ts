@@ -60,7 +60,11 @@ export function saveToHistory(result: AnalysisResult): void {
     savedAt: Date.now(),
     result,
   };
-  write([entry, ...parse(readRaw())].slice(0, MAX_ENTRIES));
+  // Saving a reading that is already in the list (for example, tapping a sample
+  // again) moves it to the top instead of stacking duplicates.
+  const same = JSON.stringify(result);
+  const rest = parse(readRaw()).filter((e) => JSON.stringify(e.result) !== same);
+  write([entry, ...rest].slice(0, MAX_ENTRIES));
 }
 
 export function removeFromHistory(id: string): void {

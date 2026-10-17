@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { startTransition, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { SAMPLE_KEYS, SAMPLE_PRESCRIPTIONS } from "@/lib/analysis";
@@ -58,7 +58,12 @@ export default function Home() {
       }
       openReading(data.result);
       saveToHistory(data.result);
-      router.push("/result");
+      // Next keeps this page mounted in the background after navigating, so reset
+      // to idle in the same transition. Coming back then shows the start screen.
+      startTransition(() => {
+        setStatus("idle");
+        router.push("/result");
+      });
     } catch {
       setError("Could not reach the reader. Check your connection and try again.");
       setStatus("error");
