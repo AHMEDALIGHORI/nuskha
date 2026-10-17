@@ -7,11 +7,11 @@
   --color-ink-soft: #51605a;
   --color-brand: #14532d;
   --color-brand-deep: #0c3a1f;
-  --color-accent: #d97706;
+  --color-accent: #b85c00;
   --color-accent-deep: #9a5806;
   --color-danger: #b91c1c;
   --color-caution: #b45309;
-  --color-safe: #15803d;
+  --color-safe: #15703a;
 
   --font-sans: var(--font-noto-sans), "Segoe UI", system-ui, sans-serif;
   --font-urdu: var(--font-noto-nastaliq), "Jameel Noori Nastaleeq", serif;
