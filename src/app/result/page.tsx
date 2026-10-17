@@ -1,28 +1,52 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { whatsappText } from "@/lib/schedule";
-import { speakUr, stopSpeaking } from "@/lib/speech";
+import { hasUrduVoice, onVoicesReady, speakUr, stopSpeaking } from "@/lib/speech";
 import type { AnalysisResult } from "@/lib/types";
 
-export default function ResultPage() {
-  const [result, setResult] = useState<AnalysisResult | null | undefined>(undefined);
+type VoiceNote = null | "no-urdu-voice" | "unsupported";
 
-  useEffect(() => {
-    const raw = sessionStorage.getItem("nuskha-result");
-    if (!raw) {
-      setResult(null);
+const noSubscribe = () => () => {};
+
+export default function ResultPage() {
+  // undefined while rendering on the server, null when no reading is stored.
+  const raw = useSyncExternalStore(
+    noSubscribe,
+    () => sessionStorage.getItem("nuskha-result"),
+    () => undefined
+  );
+  const result = useMemo<AnalysisResult | null | undefined>(() => {
+    if (raw === undefined) return undefined;
+    if (raw === null) return null;
+    try {
+      return JSON.parse(raw);
+    } catch {
+      return null;
+    }
+  }, [raw]);
+  const urduReady = useSyncExternalStore(onVoicesReady, hasUrduVoice, () => true);
+  const [speaking, setSpeaking] = useState(false);
+  const [voiceNote, setVoiceNote] = useState<VoiceNote>(null);
+
+  useEffect(() => () => stopSpeaking(), []);
+
+  function toggleSpeech(text: string) {
+    if (speaking) {
+      stopSpeaking();
+      setSpeaking(false);
       return;
     }
-    try {
-      setResult(JSON.parse(raw));
-    } catch {
-      setResult(null);
+    const outcome = speakUr(text, () => setSpeaking(false));
+    if (outcome === "unsupported") {
+      setVoiceNote("unsupported");
+      return;
     }
-    return () => stopSpeaking();
-  }, []);
+    setVoiceNote(outcome === "no-urdu-voice" ? "no-urdu-voice" : null);
+    setSpeaking(true);
+  }
 
   if (result === undefined) {
     return (
@@ -93,7 +117,7 @@ export default function ResultPage() {
                 }`}
               >
                 <div className="flex items-start gap-3">
-                  <WarningIcon />
+                  <WarningIcon tone={flag.severity === "danger" ? "text-danger" : flag.severity === "caution" ? "text-caution" : "text-ink-soft"} />
                   <div>
                     <p
                       className={`font-semibold ${
@@ -106,9 +130,9 @@ export default function ResultPage() {
                     >
                       {flag.titleEn}
                     </p>
-                    <p className="font-urdu mt-1 leading-loose text-ink">{flag.titleUr}</p>
+                    <p dir="rtl" lang="ur" className="font-urdu mt-1 leading-loose text-ink">{flag.titleUr}</p>
                     <p className="mt-2 text-ink">{flag.detailEn}</p>
-                    <p className="font-urdu mt-1 leading-loose text-ink-soft">{flag.detailUr}</p>
+                    <p dir="rtl" lang="ur" className="font-urdu mt-1 leading-loose text-ink-soft">{flag.detailUr}</p>
                   </div>
                 </div>
               </motion.article>
@@ -141,7 +165,7 @@ export default function ResultPage() {
               </div>
 
               <div className="mt-3 flex flex-wrap gap-2" aria-label="Daily schedule">
-                {(["morning", "afternoon", "night"] as const).map((slot, idx) => (
+                {(["Morning", "Afternoon", "Night"] as const).map((slot, idx) => (
                   <span
                     key={slot}
                     className={`rounded-md px-3 py-1 text-sm font-semibold ${
@@ -151,12 +175,38 @@ export default function ResultPage() {
                     }`}
                   >
                     {slot}
+                    <span className="sr-only">
+                      {med.raw.schedule[idx] ? ": take a dose" : ": no dose"}
+                    </span>
                   </span>
                 ))}
               </div>
 
+              {med.raw.instructions && (
+                <p className="mt-3 text-ink">
+                  <span className="font-semibold">Written on the paper:</span>{" "}
+                  {med.raw.instructions}
+                </p>
+              )}
+
+              {(med.raw.confidence === "low" || med.raw.confidence === "medium") && !result.sample && (
+                <div className="mt-3 rounded-md border border-caution/40 bg-amber-50 px-4 py-3">
+                  <p className="font-semibold text-caution">
+                    {med.raw.confidence === "low"
+                      ? "Nuskha could not read this name clearly."
+                      : "Nuskha is not fully sure about this name."}
+                  </p>
+                  <p className="mt-1 text-ink">
+                    Check it against the paper or the medicine box before relying on the details below.
+                  </p>
+                  <p dir="rtl" lang="ur" className="font-urdu mt-1 leading-loose text-ink-soft">
+                    یہ نام صاف نہیں پڑھا گیا۔ کاغذ یا دوا کے ڈبے سے ملا لیں۔
+                  </p>
+                </div>
+              )}
+
               <p className="mt-4 text-ink">{med.explanationEn}</p>
-              <p className="font-urdu mt-1 leading-loose text-ink-soft">{med.explanationUr}</p>
+              <p dir="rtl" lang="ur" className="font-urdu mt-1 leading-loose text-ink-soft">{med.explanationUr}</p>
 
               {med.generics.length > 0 && (
                 <div className="mt-4 rounded-md bg-paper p-4">
@@ -191,7 +241,7 @@ export default function ResultPage() {
           ).map(([slot, urdu]) => (
             <div key={slot} className="rounded-lg border border-paper-deep bg-white p-5">
               <p className="font-semibold capitalize text-ink-soft">{slot}</p>
-              <p className="font-urdu text-xl leading-loose text-brand">{urdu}</p>
+              <p dir="rtl" lang="ur" className="font-urdu text-xl leading-loose text-brand">{urdu}</p>
               {result.schedule[slot].length > 0 ? (
                 <ul className="mt-2 space-y-1">
                   {result.schedule[slot].map((item) => (
@@ -208,14 +258,15 @@ export default function ResultPage() {
         </div>
       </section>
 
-      <div className="mt-10 flex flex-col gap-3 sm:flex-row">
+      <div className="mt-10 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
         <button
           type="button"
-          onClick={() => speakUr(speakingText)}
+          onClick={() => toggleSpeech(speakingText)}
+          aria-pressed={speaking}
           className="inline-flex min-h-14 items-center justify-center gap-3 rounded-lg bg-accent px-8 text-lg font-semibold text-white transition-colors hover:bg-accent-deep"
         >
-          <SpeakerIcon />
-          Hear it in Urdu
+          {speaking ? <StopIcon /> : <SpeakerIcon />}
+          {speaking ? "Stop" : "Hear it in Urdu"}
         </button>
         <a
           href={`https://wa.me/?text=${encodeURIComponent(whatsappText(result))}`}
@@ -233,6 +284,13 @@ export default function ResultPage() {
           Scan another
         </Link>
       </div>
+      {(voiceNote || !urduReady) && (
+        <p role="status" className="mt-4 max-w-xl text-base text-ink-soft">
+          {voiceNote === "unsupported"
+            ? "This browser cannot speak aloud. Try Chrome on Android."
+            : "This device has no Urdu voice installed, so the reading may sound unclear. On Android, add Urdu in Settings, Text-to-speech, Google speech engine."}
+        </p>
+      )}
     </Shell>
   );
 }
@@ -248,7 +306,7 @@ function Shell({ children }: { children: React.ReactNode }) {
           >
             Nuskha
           </Link>
-          <span className="font-urdu text-xl leading-relaxed text-ink-soft">نسخہ</span>
+          <span dir="rtl" lang="ur" className="font-urdu text-xl leading-relaxed text-ink-soft">نسخہ</span>
         </div>
         <div className="rx-rule mx-auto mt-4 max-w-3xl" />
       </header>
@@ -288,7 +346,7 @@ function buildSpeechText(result: AnalysisResult): string {
 }
 
 // Warning triangle: directly relevant to a safety flag, drawn in-house.
-function WarningIcon() {
+function WarningIcon({ tone }: { tone: string }) {
   return (
     <svg
       width="24"
@@ -299,7 +357,7 @@ function WarningIcon() {
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
-      className="mt-1 shrink-0 text-current"
+      className={`mt-1 shrink-0 ${tone}`}
       aria-hidden="true"
     >
       <path d="M12 3 2.5 20h19L12 3z" />
@@ -324,6 +382,14 @@ function SpeakerIcon() {
     >
       <path d="M4 9v6h4l5 4V5L8 9H4z" />
       <path d="M16.5 8.5a5 5 0 0 1 0 7" />
+    </svg>
+  );
+}
+
+function StopIcon() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <rect x="6" y="6" width="12" height="12" rx="1.5" />
     </svg>
   );
 }

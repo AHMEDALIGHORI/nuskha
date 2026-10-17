@@ -1,35 +1,51 @@
 // Client-side Urdu text-to-speech via the Web Speech API. No network, no cost.
-// Voices for ur-PK are not installed on every device; we fall back gracefully.
+// Urdu voices are not installed on every device, so callers learn which case applied.
 
-let cachedVoices: SpeechSynthesisVoice[] = [];
+export type SpeakOutcome = "urdu" | "no-urdu-voice" | "unsupported";
 
-function refreshVoices() {
-  if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
-  cachedVoices = window.speechSynthesis.getVoices();
+function supported() {
+  return typeof window !== "undefined" && "speechSynthesis" in window;
 }
 
-if (typeof window !== "undefined" && "speechSynthesis" in window) {
-  refreshVoices();
-  window.speechSynthesis.onvoiceschanged = refreshVoices;
+function urduVoice(): SpeechSynthesisVoice | null {
+  const voices = window.speechSynthesis.getVoices();
+  return voices.find((v) => v.lang.toLowerCase().startsWith("ur")) ?? null;
 }
 
-export function speakUr(text: string): boolean {
-  if (typeof window === "undefined" || !("speechSynthesis" in window)) return false;
-  window.speechSynthesis.cancel();
-  const utterance = new SpeechSynthesisUtterance(text);
-  utterance.lang = "ur-PK";
-  utterance.rate = 0.9;
-  const voice =
-    cachedVoices.find((v) => v.lang.toLowerCase().startsWith("ur")) ??
-    cachedVoices.find((v) => v.lang.toLowerCase().startsWith("pa")) ??
-    null;
-  if (voice) utterance.voice = voice;
-  window.speechSynthesis.speak(utterance);
-  return true;
+export function hasUrduVoice(): boolean {
+  return supported() && urduVoice() !== null;
+}
+
+export function onVoicesReady(cb: () => void): () => void {
+  if (!supported()) return () => {};
+  window.speechSynthesis.addEventListener("voiceschanged", cb);
+  return () => window.speechSynthesis.removeEventListener("voiceschanged", cb);
+}
+
+// Chrome stops long utterances after about 15 seconds, so speak sentence by sentence.
+export function speakUr(text: string, onEnd?: () => void): SpeakOutcome {
+  if (!supported()) return "unsupported";
+  const synth = window.speechSynthesis;
+  synth.cancel();
+  const voice = urduVoice();
+  const sentences = text
+    .split("۔")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  sentences.forEach((sentence, i) => {
+    const u = new SpeechSynthesisUtterance(sentence);
+    u.lang = "ur-PK";
+    u.rate = 0.9;
+    if (voice) u.voice = voice;
+    if (i === sentences.length - 1 && onEnd) {
+      u.onend = onEnd;
+      u.onerror = onEnd;
+    }
+    synth.speak(u);
+  });
+  return voice ? "urdu" : "no-urdu-voice";
 }
 
 export function stopSpeaking() {
-  if (typeof window !== "undefined" && "speechSynthesis" in window) {
-    window.speechSynthesis.cancel();
-  }
+  if (supported()) window.speechSynthesis.cancel();
 }

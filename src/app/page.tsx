@@ -4,6 +4,16 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { SAMPLE_KEYS, SAMPLE_PRESCRIPTIONS } from "@/lib/analysis";
+import { photoToDataUrl } from "@/lib/image";
+import {
+  clearHistory,
+  historyTitle,
+  useHistory,
+  openReading,
+  removeFromHistory,
+  saveToHistory,
+  type HistoryEntry,
+} from "@/lib/history";
 
 type Status = "idle" | "processing" | "error";
 
@@ -20,6 +30,12 @@ export default function Home() {
   const [stage, setStage] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [busySample, setBusySample] = useState<string | null>(null);
+  const history = useHistory();
+
+  function openPast(entry: HistoryEntry) {
+    openReading(entry.result);
+    router.push("/result");
+  }
 
   async function analyze(body: Record<string, unknown>) {
     setStatus("processing");
@@ -40,7 +56,8 @@ export default function Home() {
         setStatus("error");
         return;
       }
-      sessionStorage.setItem("nuskha-result", JSON.stringify(data.result));
+      openReading(data.result);
+      saveToHistory(data.result);
       router.push("/result");
     } catch {
       setError("Could not reach the reader. Check your connection and try again.");
@@ -50,13 +67,22 @@ export default function Home() {
     }
   }
 
-  function onPhotoPicked(e: React.ChangeEvent<HTMLInputElement>) {
+  async function onPhotoPicked(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => analyze({ image: reader.result });
-    reader.readAsDataURL(file);
     e.target.value = "";
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      setError("That file is not a photo. Choose a picture of the prescription.");
+      setStatus("error");
+      return;
+    }
+    try {
+      const image = await photoToDataUrl(file);
+      await analyze({ image });
+    } catch {
+      setError("Could not open that photo. Try taking it again.");
+      setStatus("error");
+    }
   }
 
   function trySample(key: string) {
@@ -69,7 +95,7 @@ export default function Home() {
       <header className="px-6 pt-6 sm:px-10">
         <div className="mx-auto flex max-w-3xl items-baseline gap-3">
           <span className="font-hand text-4xl font-semibold text-brand">Nuskha</span>
-          <span className="font-urdu text-2xl leading-relaxed text-ink-soft">نسخہ</span>
+          <span dir="rtl" lang="ur" className="font-urdu text-2xl leading-relaxed text-ink-soft">نسخہ</span>
         </div>
         <div className="rx-rule mx-auto mt-4 max-w-3xl" />
       </header>
@@ -121,7 +147,7 @@ export default function Home() {
               <h1 className="max-w-xl text-3xl font-bold leading-tight text-brand sm:text-4xl">
                 Your prescription, in plain words.
               </h1>
-              <p className="font-urdu mt-4 text-2xl leading-loose text-ink">
+              <p dir="rtl" lang="ur" className="font-urdu mt-4 text-2xl leading-loose text-ink">
                 نسخہ سمجھیں، محفوظ رہیں
               </p>
               <p className="mt-4 max-w-xl text-ink-soft">
@@ -193,7 +219,7 @@ export default function Home() {
                     animate={{ opacity: 1, y: 0 }}
                     className="mt-8 max-w-xl rounded-lg border border-danger/40 bg-white p-5"
                   >
-                    <p className="font-semibold text-danger">That photo did not work</p>
+                    <p className="font-semibold text-danger">That did not work</p>
                     <p className="mt-1 text-ink-soft">{error}</p>
                     <button
                       type="button"
@@ -205,6 +231,74 @@ export default function Home() {
                   </motion.div>
                 )}
               </AnimatePresence>
+
+              {history.length > 0 && (
+                <section aria-labelledby="history-heading" className="mt-14">
+                  <div className="flex flex-wrap items-baseline justify-between gap-3">
+                    <h2 id="history-heading" className="text-lg font-bold text-brand">
+                      Your recent readings
+                    </h2>
+                    <button
+                      type="button"
+                      onClick={() => clearHistory()}
+                      className="min-h-11 px-2 text-base font-medium text-ink-soft underline underline-offset-4 hover:text-danger"
+                    >
+                      Clear all
+                    </button>
+                  </div>
+                  <p className="mt-1 text-sm text-ink-soft">
+                    Saved only on this device. Nothing is stored on our servers.
+                  </p>
+                  <ul className="mt-4 grid gap-3">
+                    {history.map((entry) => {
+                      const warnings = entry.result.flags.filter(
+                        (f) => f.severity !== "info"
+                      ).length;
+                      return (
+                        <li
+                          key={entry.id}
+                          className="flex items-center gap-2 rounded-lg border border-paper-deep bg-white"
+                        >
+                          <button
+                            type="button"
+                            onClick={() => openPast(entry)}
+                            className="flex min-h-14 flex-1 flex-col items-start px-4 py-3 text-left hover:bg-paper"
+                          >
+                            <span className="font-semibold text-ink">
+                              {historyTitle(entry.result)}
+                            </span>
+                            <span className="text-sm text-ink-soft">
+                              {new Date(entry.savedAt).toLocaleString("en-PK", {
+                                day: "numeric",
+                                month: "short",
+                                hour: "numeric",
+                                minute: "2-digit",
+                              })}
+                              {entry.result.sample && " · Sample"}
+                              {warnings > 0 && (
+                                <span className="font-semibold text-danger">
+                                  {" "}
+                                  · {warnings} warning{warnings === 1 ? "" : "s"}
+                                </span>
+                              )}
+                            </span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => removeFromHistory(entry.id)}
+                            aria-label={`Remove reading: ${historyTitle(entry.result)}`}
+                            className="mr-1 flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-ink-soft hover:bg-paper hover:text-danger"
+                          >
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                              <path d="M6 6l12 12M18 6 6 18" />
+                            </svg>
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </section>
+              )}
 
               <div className="rx-rule mt-14" />
               <ol className="mt-8 grid gap-6 sm:grid-cols-2">
@@ -245,7 +339,7 @@ export default function Home() {
             href="https://github.com/AHMEDALIGHORI/nuskha"
             target="_blank"
             rel="noreferrer"
-            className="font-medium text-brand underline-offset-4 hover:underline"
+            className="inline-flex min-h-11 items-center font-medium text-brand underline-offset-4 hover:underline"
           >
             Source on GitHub
           </a>
