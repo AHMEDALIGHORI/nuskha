@@ -55,8 +55,8 @@ export const MEDICINES_PK: DatasetEntry[] = [
     generics: [{ name: "Cold relief sachet (generic)", priceBand: [8, 15] }],
     purposeEn: "Cold and flu powder mixed in water.",
     purposeUr: "نزلہ زکام کی پاؤڈر، پانی میں مکس کر کے لیں۔",
-    takeEn: "Dissolve in warm water and drink. It contains paracetamol, do not combine with Panadol.",
-    takeUr: "گرم پانی میں حل کر کے پئیں۔ اس میں پیراسیٹامول ہے، پیناڈول کے ساتھ نہ لیں۔",
+    takeEn: "Dissolve in warm water and drink. Do not take it alongside Panadol or other paracetamol.",
+    takeUr: "گرم پانی میں حل کر کے پئیں۔ پیناڈول یا کسی اور پیراسیٹامول کے ساتھ نہ لیں۔",
     cautionEn: "Contains paracetamol. Count it toward your daily paracetamol total.",
     cautionUr: "اس میں پیراسیٹامول ہے۔ دن بھر کی کل مقدار میں شمار کریں۔",
   },
@@ -456,10 +456,53 @@ export const MEDICINES_PK: DatasetEntry[] = [
     takeEn: "Take after food. It darkens stool, which is normal.",
     takeUr: "کھانے کے بعد لیں۔ اسٹول کا کالا ہونا معمول ہے۔",
   },
+  {
+    brand: "ORS",
+    molecule: "Oral rehydration salts",
+    ingredients: ["oral rehydration salts"],
+    form: "sachet",
+    priceBand: [30, 60],
+    generics: [],
+    purposeEn: "Replaces water and salts lost in loose motions or vomiting.",
+    purposeUr: "دست یا قے میں ضائع ہونے والا پانی اور نمکیات پورے کرتا ہے۔",
+    takeEn: "Mix one sachet in the amount of clean water written on the pack. Sip through the day.",
+    takeUr: "ایک ساشے پیکٹ پر لکھی مقدار کے صاف پانی میں ملائیں اور دن بھر گھونٹ گھونٹ پئیں۔",
+  },
+  {
+    brand: "Calpol",
+    molecule: "Paracetamol syrup",
+    ingredients: ["paracetamol"],
+    form: "syrup",
+    priceBand: [110, 180],
+    generics: [{ name: "Paracetamol syrup (generic)", priceBand: [50, 90] }],
+    purposeEn: "Fever and pain relief, often for children.",
+    purposeUr: "بخار اور درد کے لیے، اکثر بچوں کو دیا جاتا ہے۔",
+    takeEn: "Measure with the cup or spoon in the pack, by weight or age as the doctor said.",
+    takeUr: "پیکٹ کے کپ یا چمچ سے ناپیں، جیسا ڈاکٹر نے وزن یا عمر کے مطابق کہا۔",
+    cautionEn: "Do not give with any other medicine that also contains paracetamol.",
+    cautionUr: "کسی دوسری پیراسیٹامول والی دوا کے ساتھ نہ دیں۔",
+  },
+  {
+    brand: "Entamizole",
+    molecule: "Metronidazole + Diloxanide",
+    ingredients: ["metronidazole", "diloxanide"],
+    form: "tablet",
+    priceBand: [150, 260],
+    generics: [{ name: "Metronidazole + Diloxanide (generic)", priceBand: [70, 130] }],
+    purposeEn: "Treats stomach infections such as amoebic dysentery.",
+    purposeUr: "پیٹ کے انفیکشن جیسے پیچش کا علاج۔",
+    takeEn: "Take after food and finish the full course.",
+    takeUr: "کھانے کے بعد لیں اور پورا کورس مکمل کریں۔",
+    cautionEn: "Avoid alcohol during the course and for two days after.",
+    cautionUr: "کورس کے دوران اور اس کے دو دن بعد تک الکحل سے پرہیز کریں۔",
+  },
 ];
 
+// Dosage-form words doctors write before the name ("Tab Panadol", "T. Warf").
+const FORM_PREFIX = /^(tab|tabs|tablet|cap|caps|capsule|syp|syr|syrup|inj|susp|sachet|t|c|s)\.?\s+/i;
+
 export function findMedicine(query: string): DatasetEntry | null {
-  const q = query.toLowerCase().trim();
+  const q = query.toLowerCase().trim().replace(FORM_PREFIX, "").trim();
   if (!q) return null;
   let best: { entry: DatasetEntry; score: number } | null = null;
   for (const entry of MEDICINES_PK) {
@@ -467,7 +510,7 @@ export function findMedicine(query: string): DatasetEntry | null {
     const molecule = entry.molecule.toLowerCase();
     let score = 0;
     if (q === brand) score = 100;
-    else if (q.includes(brand)) score = 80;
+    else if (containsWord(q, brand)) score = 80 + Math.min(brand.length, 15) / 100;
     else if (brand.includes(q) && q.length >= 4) score = 70;
     if (score === 0) {
       for (const part of molecule.split(/[ +]/)) {
@@ -476,7 +519,34 @@ export function findMedicine(query: string): DatasetEntry | null {
         }
       }
     }
+    // Handwriting misreads: allow one wrong letter in short names, two in long ones.
+    if (score === 0 && q.length >= 5) {
+      const head = q.split(/\s+/)[0];
+      const brandHead = brand.split(/\s+/)[0];
+      const limit = brandHead.length >= 8 ? 2 : 1;
+      if (brandHead.length >= 5 && editDistance(head, brandHead) <= limit) score = 50;
+    }
     if (score > 0 && (!best || score > best.score)) best = { entry, score };
   }
   return best ? best.entry : null;
+}
+
+function editDistance(a: string, b: string): number {
+  const prev = Array.from({ length: b.length + 1 }, (_, j) => j);
+  for (let i = 1; i <= a.length; i++) {
+    let diag = prev[0];
+    prev[0] = i;
+    for (let j = 1; j <= b.length; j++) {
+      const temp = prev[j];
+      prev[j] = Math.min(prev[j] + 1, prev[j - 1] + 1, diag + (a[i - 1] === b[j - 1] ? 0 : 1));
+      diag = temp;
+    }
+  }
+  return prev[b.length];
+}
+
+// Whole-word match so short brands like "ORS" do not match inside other words.
+function containsWord(text: string, word: string): boolean {
+  const escaped = word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp(`(^|[^a-z])${escaped}([^a-z]|$)`).test(text);
 }

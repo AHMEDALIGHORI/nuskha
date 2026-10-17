@@ -28,8 +28,8 @@ export const KNOWN_INTERACTIONS: KnownInteraction[] = [
     a: "metronidazole",
     b: "warfarin",
     severity: "danger",
-    titleEn: "Flagyl plus warfarin",
-    titleUr: "فلیگائل اور وارفیرن اکٹھے",
+    titleEn: "Metronidazole plus warfarin",
+    titleUr: "میٹرونڈیازول اور وارفیرن اکٹھے",
     detailEn: "Metronidazole can double warfarin's effect and cause bleeding. Your INR must be rechecked.",
     detailUr: "میٹرونڈیاژول وارفیرن کا اثر دگنا کر سکتا ہے۔ آئی این آر ٹیسٹ دوبارہ کروائیں۔",
   },
@@ -132,18 +132,25 @@ export function computeFlags(
     const label = matched[indices[0]]?.ingredients.includes(ingredient)
       ? ingredient
       : "an ingredient";
-    const names = indices.map((i) => matched[i]?.brand ?? extracted[i].name).join(", ");
+    const brandList = indices.map((i) => matched[i]?.brand ?? extracted[i].name);
+    const names =
+      brandList.length === 2
+        ? `${brandList[0]} and ${brandList[1]}`
+        : `${brandList.slice(0, -1).join(", ")} and ${brandList[brandList.length - 1]}`;
+    const namesUr = brandList.join("، ");
+    const all = brandList.length === 2 ? "both" : "all";
+    const labelUr = ingredient === "paracetamol" ? "پیراسیٹامول" : label;
     flags.push({
       severity: isDanger ? "danger" : "caution",
       kind: "duplicate-ingredient",
       titleEn: `${capitalize(label)} appears more than once`,
       titleUr: isDanger ? "پیراسیٹامول بار بار آرہا ہے" : "ایک جزو دوبارہ آرہا ہے",
       detailEn: isDanger
-        ? `${names} all contain ${label}. Taking both can push the daily dose past the safe limit and hurt the liver. Confirm with your pharmacist which one to keep.`
-        : `${names} share ${label}. Ask your pharmacist whether both are needed together.`,
+        ? `${names} ${all} contain ${label}. Taking them together can push the daily dose past the safe limit and hurt the liver. Confirm with your pharmacist which one to keep.`
+        : `${names} share ${label}. Ask your pharmacist whether ${all} are needed together.`,
       detailUr: isDanger
-        ? `${names} سب میں ${label} ہے۔ دونوں لینے سے روزانہ کی مقدار حد سے بڑھ کر جگر کو نقصان پہنچا سکتی ہے۔ کون سی رکھنی ہے، فارماسسٹ سے پوچھیں۔`
-        : `${names} میں ${label} مشترک ہے۔ دونوں اکٹھے ضروری ہیں یا نہیں، فارماسسٹ سے پوچھیں۔`,
+        ? `${namesUr} سب میں ${labelUr} ہے۔ اکٹھے لینے سے روزانہ کی مقدار حد سے بڑھ کر جگر کو نقصان پہنچا سکتی ہے۔ کون سی رکھنی ہے، فارماسسٹ سے پوچھیں۔`
+        : `${namesUr} میں ${labelUr} مشترک ہے۔ سب اکٹھے ضروری ہیں یا نہیں، فارماسسٹ سے پوچھیں۔`,
       medicineIndices: indices,
     });
   });
@@ -167,14 +174,16 @@ export function computeFlags(
     const key = [inter.a, inter.b].sort().join("+");
     if (seenPairs.has(key)) continue;
     seenPairs.add(key);
+    const involved = [...new Set([...aIdx, ...bIdx])];
+    const names = involved.map((i) => matched[i]?.brand ?? extracted[i].name).join(" and ");
     flags.push({
       severity: inter.severity,
       kind: "interaction",
       titleEn: inter.titleEn,
       titleUr: inter.titleUr,
-      detailEn: `${inter.detailEn} (${inter.a} + ${inter.b})`,
-      detailUr: inter.detailUr,
-      medicineIndices: [...new Set([...aIdx, ...bIdx])],
+      detailEn: `${inter.detailEn} On your paper: ${names}.`,
+      detailUr: `${inter.detailUr} آپ کے نسخے میں: ${names}۔`,
+      medicineIndices: involved,
     });
   }
 
