@@ -3,7 +3,7 @@ import type { DatasetEntry } from "./types";
 // Curated dataset of medicines commonly dispensed in Pakistan.
 // Price bands are typical pharmacy ranges in PKR per strip (or per unit for sachets and inhalers),
 // compiled from public retail listings. They are estimates for awareness, not offers.
-// Ingredients use normalized keys shared with safety.ts (see INGREDIENT_ALIASES).
+// Ingredients use lowercase molecule keys shared with KNOWN_INTERACTIONS in safety.ts.
 
 export const MEDICINES_PK: DatasetEntry[] = [
   {

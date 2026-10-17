@@ -41,6 +41,6 @@ yarn-error.log*
 next-env.d.ts
 
 # local QA artifacts
-.dev.log
+.dev.log*
 .qa-*.png
 .playwright-cli/
