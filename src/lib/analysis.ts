@@ -69,9 +69,9 @@ export const SAMPLE_PRESCRIPTIONS: Record<
   "rx-2": {
     label: "Sample: cold with hidden double paracetamol",
     medicines: [
-      { name: "Panadol", strength: "500mg", schedule: [true, true, true], confidence: "high" },
-      { name: "Arinac Forte", strength: "sachet", schedule: [true, false, true], confidence: "high" },
-      { name: "Disprin", strength: "75mg", schedule: [true, false, false], confidence: "medium" },
+      { name: "Panadol", strength: "500mg", schedule: [true, true, true], unitsPerDose: 2, instructions: "2 tablets each time", confidence: "high" },
+      { name: "Panadol CF", schedule: [true, true, true], instructions: "x 5 days", confidence: "high" },
+      { name: "Arinac Forte", schedule: [true, false, true], instructions: "after meal", confidence: "medium" },
       { name: "Zyrtec", strength: "10mg", schedule: [false, false, true], confidence: "high" },
     ],
   },

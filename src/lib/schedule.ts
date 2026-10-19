@@ -1,4 +1,4 @@
-import type { AnalysisResult, DaySchedule, ExtractedMedicine } from "./types";
+import type { AnalysisResult, DaySchedule, ExtractedMedicine, SafetyFlag } from "./types";
 
 const SLOT_LABELS = ["morning", "afternoon", "night"] as const;
 
@@ -13,7 +13,8 @@ export function buildSchedule(medicines: ExtractedMedicine[]): DaySchedule {
   return schedule;
 }
 
-export function whatsappText(result: AnalysisResult): string {
+// flags: the full list for this person (reading flags plus dose and profile checks).
+export function whatsappText(result: AnalysisResult, flags: SafetyFlag[] = result.flags): string {
   const lines: string[] = [];
   lines.push("Nuskha: my prescription plan");
   if (result.sample) lines.push("(Sample prescription)");
@@ -21,7 +22,7 @@ export function whatsappText(result: AnalysisResult): string {
   lines.push(`Morning: ${s.morning.join(", ") || "nothing listed"}`);
   lines.push(`Afternoon: ${s.afternoon.join(", ") || "nothing listed"}`);
   lines.push(`Night: ${s.night.join(", ") || "nothing listed"}`);
-  const serious = result.flags.filter((f) => f.severity === "danger" || f.severity === "caution");
+  const serious = flags.filter((f) => f.severity === "danger" || f.severity === "caution");
   if (serious.length > 0) {
     lines.push("Warnings to confirm with the pharmacist:");
     for (const f of serious) lines.push(`- ${f.titleEn}: ${f.detailEn}`);

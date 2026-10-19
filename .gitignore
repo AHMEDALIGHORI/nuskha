@@ -43,4 +43,5 @@ next-env.d.ts
 # local QA artifacts
 .dev.log*
 .qa-*.png
+.tmp-*
 .playwright-cli/

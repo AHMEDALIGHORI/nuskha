@@ -105,6 +105,15 @@ export const KNOWN_INTERACTIONS: KnownInteraction[] = [
     detailEn: "This antibiotic can increase warfarin's effect. INR monitoring is advised.",
     detailUr: "یہ اینٹی بائیوٹک وارفیرن کا اثر بڑھا سکتی ہے۔ آئی این آر ٹیسٹ مشورہ ہے۔",
   },
+  ...["amlodipine", "perindopril", "bisoprolol"].map((bp) => ({
+    a: "pseudoephedrine",
+    b: bp,
+    severity: "caution" as const,
+    titleEn: "Cold medicine with blood pressure pills",
+    titleUr: "نزلے کی دوا اور بلڈ پریشر کی گولی",
+    detailEn: "The decongestant pseudoephedrine can raise blood pressure and work against your pressure pill. Ask whether a cold medicine without it suits you.",
+    detailUr: "ناک کھولنے والی دوا سوڈوایفیڈرین بلڈ پریشر بڑھا کر پریشر کی گولی کا اثر کم کر سکتی ہے۔ پوچھیں کہ اس کے بغیر نزلے کی دوا بہتر ہے یا نہیں۔",
+  })),
 ];
 
 const DUPLICATE_DANGER_INGREDIENTS = new Set(["paracetamol"]);
@@ -132,7 +141,7 @@ export function computeFlags(
     const label = matched[indices[0]]?.ingredients.includes(ingredient)
       ? ingredient
       : "an ingredient";
-    const brandList = indices.map((i) => matched[i]?.brand ?? extracted[i].name);
+    const brandList = indices.map((i) => extracted[i].name);
     const names =
       brandList.length === 2
         ? `${brandList[0]} and ${brandList[1]}`
@@ -175,7 +184,7 @@ export function computeFlags(
     if (seenPairs.has(key)) continue;
     seenPairs.add(key);
     const involved = [...new Set([...aIdx, ...bIdx])];
-    const brands = involved.map((i) => matched[i]?.brand ?? extracted[i].name);
+    const brands = involved.map((i) => extracted[i].name);
     const names = brands.join(" and ");
     const namesUr = brands.join(" اور ");
     flags.push({

@@ -10,6 +10,7 @@ export const MEDICINES_PK: DatasetEntry[] = [
     brand: "Panadol",
     molecule: "Paracetamol",
     ingredients: ["paracetamol"],
+    unitMg: { paracetamol: 500 },
     form: "tablet",
     priceBand: [40, 60],
     generics: [{ name: "Paracetamol (generic)", priceBand: [10, 25] }],
@@ -22,6 +23,7 @@ export const MEDICINES_PK: DatasetEntry[] = [
     brand: "Panadol Extra",
     molecule: "Paracetamol + Caffeine",
     ingredients: ["paracetamol", "caffeine"],
+    unitMg: { paracetamol: 500, caffeine: 65 },
     form: "tablet",
     priceBand: [60, 90],
     generics: [{ name: "Paracetamol + Caffeine (generic)", priceBand: [20, 45] }],
@@ -34,8 +36,9 @@ export const MEDICINES_PK: DatasetEntry[] = [
   },
   {
     brand: "Panadol CF",
-    molecule: "Paracetamol + Phenylephrine + Chlorpheniramine",
-    ingredients: ["paracetamol", "phenylephrine", "chlorpheniramine"],
+    molecule: "Paracetamol + Pseudoephedrine + Chlorpheniramine",
+    ingredients: ["paracetamol", "pseudoephedrine", "chlorpheniramine"],
+    unitMg: { paracetamol: 500, pseudoephedrine: 60, chlorpheniramine: 4 },
     form: "tablet",
     priceBand: [120, 160],
     generics: [{ name: "Cold and flu relief (generic)", priceBand: [40, 80] }],
@@ -43,22 +46,24 @@ export const MEDICINES_PK: DatasetEntry[] = [
     purposeUr: "نزلہ زکام: بخار، ناک بند، ناک بہنا۔",
     takeEn: "Take after food. It contains paracetamol, do not combine with plain Panadol.",
     takeUr: "کھانے کے بعد لیں۔ اس میں پیراسیٹامول ہے، سادہ پیناڈول کے ساتھ نہ لیں۔",
-    cautionEn: "Contains paracetamol. Count it toward your daily paracetamol total.",
-    cautionUr: "اس میں پیراسیٹامول ہے۔ دن بھر کی کل مقدار میں شمار کریں۔",
+    cautionEn: "Contains paracetamol: count it toward your daily paracetamol total. The decongestant in it (pseudoephedrine) can raise blood pressure, so ask first if you have high blood pressure or heart disease.",
+    cautionUr: "اس میں پیراسیٹامول ہے، دن بھر کی کل مقدار میں شمار کریں۔ اس کی ناک کھولنے والی دوا (سوڈوایفیڈرین) بلڈ پریشر بڑھا سکتی ہے، ہائی بلڈ پریشر یا دل کے مریض پہلے پوچھیں۔",
   },
   {
     brand: "Arinac Forte",
-    molecule: "Paracetamol + Phenylephrine + Chlorpheniramine",
-    ingredients: ["paracetamol", "phenylephrine", "chlorpheniramine"],
-    form: "sachet",
-    priceBand: [15, 25],
-    generics: [{ name: "Cold relief sachet (generic)", priceBand: [8, 15] }],
-    purposeEn: "Cold and flu powder mixed in water.",
-    purposeUr: "نزلہ زکام کی پاؤڈر، پانی میں مکس کر کے لیں۔",
-    takeEn: "Dissolve in warm water and drink. Do not take it alongside Panadol or other paracetamol.",
-    takeUr: "گرم پانی میں حل کر کے پئیں۔ پیناڈول یا کسی اور پیراسیٹامول کے ساتھ نہ لیں۔",
-    cautionEn: "Contains paracetamol. Count it toward your daily paracetamol total.",
-    cautionUr: "اس میں پیراسیٹامول ہے۔ دن بھر کی کل مقدار میں شمار کریں۔",
+    aliases: ["Arinac"],
+    molecule: "Ibuprofen + Pseudoephedrine",
+    ingredients: ["ibuprofen", "pseudoephedrine"],
+    unitMg: { ibuprofen: 400, pseudoephedrine: 60 },
+    form: "tablet",
+    priceBand: [140, 160],
+    generics: [],
+    purposeEn: "Cold and flu: blocked nose, fever, and body aches.",
+    purposeUr: "نزلہ زکام: ناک بند، بخار اور جسم درد۔",
+    takeEn: "Take after food. It contains ibuprofen, so do not combine it with Brufen or other ibuprofen.",
+    takeUr: "کھانے کے بعد لیں۔ اس میں آئبوپروفین ہے، بروفین یا کسی اور آئبوپروفین کے ساتھ نہ لیں۔",
+    cautionEn: "The decongestant in it (pseudoephedrine) can raise blood pressure. Ask first if you have high blood pressure, heart or kidney problems.",
+    cautionUr: "اس کی ناک کھولنے والی دوا (سوڈوایفیڈرین) بلڈ پریشر بڑھا سکتی ہے۔ ہائی بلڈ پریشر، دل یا گردوں کے مسئلے میں پہلے پوچھیں۔",
   },
   {
     brand: "Brufen",
@@ -133,8 +138,8 @@ export const MEDICINES_PK: DatasetEntry[] = [
     generics: [{ name: "Ciprofloxacin (generic)", priceBand: [70, 130] }],
     purposeEn: "Antibiotic for specific bacterial infections.",
     purposeUr: "خصوصی بیکٹیریل انفیکشن کی اینٹی بائیوٹک۔",
-    takeEn: "Drink plenty of water. Avoid antacids within two hours.",
-    takeUr: "کافی پانی پئیں۔ اینٹاسڈ دو گھنٹے کے فاصلے پر لیں۔",
+    takeEn: "Drink plenty of water. Take it 2 hours before or 6 hours after antacids, iron, calcium or zinc.",
+    takeUr: "کافی پانی پئیں۔ اینٹاسڈ، آئرن، کیلشیم یا زنک سے 2 گھنٹے پہلے یا 6 گھنٹے بعد لیں۔",
   },
   {
     brand: "Risek",
@@ -164,6 +169,7 @@ export const MEDICINES_PK: DatasetEntry[] = [
     brand: "Motilium",
     molecule: "Domperidone",
     ingredients: ["domperidone"],
+    unitMg: { domperidone: 10 },
     form: "tablet",
     priceBand: [130, 180],
     generics: [{ name: "Domperidone (generic)", priceBand: [40, 80] }],
@@ -176,6 +182,7 @@ export const MEDICINES_PK: DatasetEntry[] = [
     brand: "Maxolon",
     molecule: "Metoclopramide",
     ingredients: ["metoclopramide"],
+    unitMg: { metoclopramide: 10 },
     form: "tablet",
     priceBand: [60, 100],
     generics: [{ name: "Metoclopramide (generic)", priceBand: [25, 50] }],
@@ -225,7 +232,8 @@ export const MEDICINES_PK: DatasetEntry[] = [
     cautionUr: "شوگر بہت گر سکتی ہے: پسینہ، کانپنا، گھبراہٹ ہو تو میٹھی چیز کھائیں اور مدد لیں۔",
   },
   {
-    brand: "Amlor",
+    brand: "Norvasc",
+    aliases: ["Amlor"],
     molecule: "Amlodipine",
     ingredients: ["amlodipine"],
     form: "tablet",
@@ -259,8 +267,8 @@ export const MEDICINES_PK: DatasetEntry[] = [
     generics: [{ name: "Perindopril (generic)", priceBand: [90, 160] }],
     purposeEn: "Lowers blood pressure and protects the heart and kidneys.",
     purposeUr: "بلڈ پریشر کم کرتا ہے، دل اور گردوں کی حفاظت۔",
-    takeEn: "Take in the morning, before or after food.",
-    takeUr: "صبح لیں، کھانے سے پہلے یا بعد۔",
+    takeEn: "Take in the morning, before a meal.",
+    takeUr: "صبح کھانے سے پہلے لیں۔",
   },
   {
     brand: "Lipiget",
@@ -287,7 +295,8 @@ export const MEDICINES_PK: DatasetEntry[] = [
     takeUr: "صبح لیں۔ پیشاب زیادہ آئے گا۔",
   },
   {
-    brand: "Aldactone",
+    brand: "Aldactone-A",
+    aliases: ["Aldactone"],
     molecule: "Spironolactone",
     ingredients: ["spironolactone"],
     form: "tablet",
@@ -301,7 +310,8 @@ export const MEDICINES_PK: DatasetEntry[] = [
     cautionUr: "پرینڈوپریل جیسی بلڈ پریشر گولی کے ساتھ پوٹاشیم بڑھ سکتا ہے۔ ڈاکٹر سے تصدیق کریں۔",
   },
   {
-    brand: "Warf",
+    brand: "Warfin",
+    aliases: ["Warf"],
     molecule: "Warfarin",
     ingredients: ["warfarin"],
     form: "tablet",
@@ -318,13 +328,14 @@ export const MEDICINES_PK: DatasetEntry[] = [
     brand: "Disprin",
     molecule: "Aspirin",
     ingredients: ["aspirin"],
+    unitMg: { aspirin: 300 },
     form: "tablet",
     priceBand: [35, 60],
     generics: [{ name: "Aspirin (generic)", priceBand: [15, 30] }],
-    purposeEn: "Blood thinner and pain relief, depends on the dose.",
-    purposeUr: "خون پتلا اور درد کی گولی، مقدار کے حساب سے۔",
-    takeEn: "Low doses are usually taken once daily after food.",
-    takeUr: "کم مقدار عموماً دن میں ایک بار کھانے کے بعد۔",
+    purposeEn: "Soluble aspirin for pain and fever. Low-dose aspirin for the heart is a different, smaller tablet.",
+    purposeUr: "درد اور بخار کے لیے گھلنے والی ایسپرین۔ دل کے لیے کم مقدار والی ایسپرین الگ، چھوٹی گولی ہوتی ہے۔",
+    takeEn: "Dissolve in water and take after food.",
+    takeUr: "پانی میں گھول کر کھانے کے بعد لیں۔",
     cautionEn: "Can cause bleeding, especially combined with ibuprofen or warfarin.",
     cautionUr: "خون بہنے کا خطرہ، خاص طور پر آئبوپروفین یا وارفیرن کے ساتھ۔",
   },
@@ -356,6 +367,7 @@ export const MEDICINES_PK: DatasetEntry[] = [
     brand: "Zyrtec",
     molecule: "Cetirizine",
     ingredients: ["cetirizine"],
+    unitMg: { cetirizine: 10 },
     form: "tablet",
     priceBand: [90, 140],
     generics: [{ name: "Cetirizine (generic)", priceBand: [20, 50] }],
@@ -409,7 +421,8 @@ export const MEDICINES_PK: DatasetEntry[] = [
     cautionUr: "قید شدہ نیند والی گولی۔ شراب کے ساتھ کبھی نہ لیں، اچانک بند نہ کریں۔",
   },
   {
-    brand: "Euthyrox",
+    brand: "Thyroxine",
+    aliases: ["Euthyrox"],
     molecule: "Levothyroxine",
     ingredients: ["levothyroxine"],
     form: "tablet",
@@ -445,9 +458,10 @@ export const MEDICINES_PK: DatasetEntry[] = [
     takeUr: "کھانے کے بعد لیں۔",
   },
   {
-    brand: "Fefol",
-    molecule: "Iron + Folic acid",
-    ingredients: ["iron", "folic acid"],
+    brand: "Fefol-Vit",
+    aliases: ["Fefol"],
+    molecule: "Iron + Folic acid + B vitamins + Vitamin C",
+    ingredients: ["iron", "folic acid", "vitamin b", "vitamin c"],
     form: "capsule",
     priceBand: [90, 140],
     generics: [{ name: "Iron + Folic acid (generic)", priceBand: [30, 60] }],
@@ -486,6 +500,7 @@ export const MEDICINES_PK: DatasetEntry[] = [
     brand: "Entamizole",
     molecule: "Metronidazole + Diloxanide",
     ingredients: ["metronidazole", "diloxanide"],
+    unitMg: { metronidazole: 200, diloxanide: 250 },
     form: "tablet",
     priceBand: [150, 260],
     generics: [{ name: "Metronidazole + Diloxanide (generic)", priceBand: [70, 130] }],
@@ -506,12 +521,11 @@ export function findMedicine(query: string): DatasetEntry | null {
   if (!q) return null;
   let best: { entry: DatasetEntry; score: number } | null = null;
   for (const entry of MEDICINES_PK) {
-    const brand = entry.brand.toLowerCase();
     const molecule = entry.molecule.toLowerCase();
     let score = 0;
-    if (q === brand) score = 100;
-    else if (containsWord(q, brand)) score = 80 + Math.min(brand.length, 15) / 100;
-    else if (brand.includes(q) && q.length >= 4) score = 70;
+    for (const name of [entry.brand, ...(entry.aliases ?? [])]) {
+      score = Math.max(score, nameScore(q, name.toLowerCase()));
+    }
     if (score === 0) {
       for (const part of molecule.split(/[ +]/)) {
         if (part.length > 3 && q.includes(part)) {
@@ -522,13 +536,22 @@ export function findMedicine(query: string): DatasetEntry | null {
     // Handwriting misreads: allow one wrong letter in short names, two in long ones.
     if (score === 0 && q.length >= 5) {
       const head = q.split(/\s+/)[0];
-      const brandHead = brand.split(/\s+/)[0];
-      const limit = brandHead.length >= 8 ? 2 : 1;
-      if (brandHead.length >= 5 && editDistance(head, brandHead) <= limit) score = 50;
+      for (const name of [entry.brand, ...(entry.aliases ?? [])]) {
+        const brandHead = name.toLowerCase().split(/\s+/)[0];
+        const limit = brandHead.length >= 8 ? 2 : 1;
+        if (brandHead.length >= 5 && editDistance(head, brandHead) <= limit) score = 50;
+      }
     }
     if (score > 0 && (!best || score > best.score)) best = { entry, score };
   }
   return best ? best.entry : null;
+}
+
+function nameScore(q: string, brand: string): number {
+  if (q === brand) return 100;
+  if (containsWord(q, brand)) return 80 + Math.min(brand.length, 15) / 100;
+  if (brand.includes(q) && q.length >= 4) return 70;
+  return 0;
 }
 
 function editDistance(a: string, b: string): number {

@@ -8,11 +8,18 @@ export interface ExtractedMedicine {
   schedule: ScheduleTriplet;
   instructions?: string;
   confidence?: Confidence;
+  unitsPerDose?: number; // tablets or units each time, 2 for "2+0+2"; missing means 1
+  box?: [number, number, number, number]; // where the line sits on the photo: [ymin, xmin, ymax, xmax], 0 to 1000
 }
 
 export type FlagSeverity = "danger" | "caution" | "info";
 
-export type FlagKind = "duplicate-ingredient" | "interaction" | "match-note";
+export type FlagKind =
+  | "duplicate-ingredient"
+  | "interaction"
+  | "match-note"
+  | "dose-total"
+  | "profile";
 
 export interface SafetyFlag {
   severity: FlagSeverity;
@@ -37,8 +44,12 @@ export interface DatasetGeneric {
 
 export interface DatasetEntry {
   brand: string; // common brand name in Pakistan
+  aliases?: string[]; // other names doctors write for the same product
   molecule: string; // generic name
   ingredients: string[]; // normalized ingredient keys for duplicate detection
+  // mg of each ingredient in one tablet or sachet. Needed for combination products,
+  // and used for single-ingredient ones when the paper shows no strength.
+  unitMg?: Record<string, number>;
   form: string; // "tablet", "sachet", "inhaler"
   priceBand: [number, number]; // typical PKR range per strip/unit
   generics: DatasetGeneric[]; // registered cheaper alternatives
@@ -70,4 +81,24 @@ export interface AnalysisResult {
   schedule: DaySchedule;
   sample: boolean;
   extractedCount: number;
+}
+
+// What the person told Nuskha about themselves. Kept on the device only.
+export interface SafetyProfile {
+  over60: boolean;
+  pregnant: boolean;
+  kidney: boolean;
+  penicillinAllergy: boolean;
+  aspirinAllergy: boolean;
+}
+
+export interface DoseTotal {
+  ingredient: string;
+  labelEn: string;
+  labelUr: string;
+  mgPerDay: number;
+  limitMg: number;
+  over: boolean;
+  // Every medicine that adds to this total, with how much it adds per day.
+  parts: { index: number; name: string; mgPerDay: number }[];
 }

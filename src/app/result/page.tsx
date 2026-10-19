@@ -1,11 +1,14 @@
 "use client";
 
-import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { whatsappText } from "@/lib/schedule";
 import { hasUrduVoice, onVoicesReady, speakUr, stopSpeaking } from "@/lib/speech";
-import type { AnalysisResult } from "@/lib/types";
+import { PROFILE_FIELDS, setProfileField, useProfile } from "@/lib/profile";
+import { allFlags, dailyTotals, formatMg } from "@/lib/review";
+import { buildCalendar } from "@/lib/calendar";
+import type { AnalysisResult, SafetyFlag } from "@/lib/types";
 
 type VoiceNote = null | "no-urdu-voice" | "unsupported";
 
@@ -18,6 +21,11 @@ export default function ResultPage() {
     () => sessionStorage.getItem("nuskha-result"),
     () => undefined
   );
+  const photo = useSyncExternalStore(
+    noSubscribe,
+    () => sessionStorage.getItem("nuskha-photo"),
+    () => null
+  );
   const result = useMemo<AnalysisResult | null | undefined>(() => {
     if (raw === undefined) return undefined;
     if (raw === null) return null;
@@ -27,11 +35,49 @@ export default function ResultPage() {
       return null;
     }
   }, [raw]);
+  const profile = useProfile();
+  const flags = useMemo(() => (result ? allFlags(result, profile) : []), [result, profile]);
+  const totals = useMemo(() => (result ? dailyTotals(result, profile) : []), [result, profile]);
   const urduReady = useSyncExternalStore(onVoicesReady, hasUrduVoice, () => true);
   const [speaking, setSpeaking] = useState(false);
   const [voiceNote, setVoiceNote] = useState<VoiceNote>(null);
+  const [calendarNote, setCalendarNote] = useState<string | null>(null);
+  const [selected, setSelected] = useState<number | null>(null);
+  const photoRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => () => stopSpeaking(), []);
+
+  function showOnPhoto(index: number) {
+    setSelected(index);
+    photoRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+
+  function showCard(index: number) {
+    setSelected(index);
+    document.getElementById(`med-${index}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+
+  function downloadCalendar(r: AnalysisResult) {
+    const cal = buildCalendar(r);
+    if (cal.events === 0) {
+      setCalendarNote("No dose times are marked on this reading, so there is nothing to remind you about.");
+      return;
+    }
+    const url = URL.createObjectURL(new Blob([cal.ics], { type: "text/calendar;charset=utf-8" }));
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "nuskha-reminders.ics";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+    const open = cal.events - cal.withEnd;
+    setCalendarNote(
+      `Downloaded ${cal.events} reminder${cal.events === 1 ? "" : "s"}. Open the file to add them to your calendar.` +
+        (cal.withEnd > 0 ? ` ${cal.withEnd} stop when the written course ends.` : "") +
+        (open > 0 ? ` ${open} repeat daily until you delete them.` : "")
+    );
+  }
 
   function toggleSpeech(text: string) {
     if (speaking) {
@@ -76,8 +122,10 @@ export default function ResultPage() {
     );
   }
 
-  const seriousFlags = result.flags.filter((f) => f.severity !== "info");
-  const speakingText = buildSpeechText(result);
+  const seriousFlags = flags.filter((f) => f.severity !== "info");
+  const speakingText = buildSpeechText(result, flags);
+  const boxed = photo ? result.medicines.filter((m) => m.raw.box).length : 0;
+  const activeProfile = PROFILE_FIELDS.filter((f) => profile[f.key]).length;
 
   return (
     <Shell>
@@ -98,13 +146,15 @@ export default function ResultPage() {
         )}
       </p>
 
-      {result.flags.length > 0 && (
+      <ProfilePanel profile={profile} activeCount={activeProfile} />
+
+      {flags.length > 0 && (
         <section aria-label="Safety warnings" className="mt-8">
           <h2 className="text-lg font-bold text-brand">Safety first</h2>
           <div className="mt-4 grid gap-4">
-            {result.flags.map((flag, i) => (
+            {flags.map((flag, i) => (
               <motion.article
-                key={`${flag.kind}-${i}`}
+                key={`${flag.kind}-${flag.titleEn}-${i}`}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.35, delay: i * 0.06 }}
@@ -141,19 +191,119 @@ export default function ResultPage() {
         </section>
       )}
 
+      {totals.length > 0 && (
+        <section aria-labelledby="totals-heading" className="mt-10">
+          <h2 id="totals-heading" className="text-lg font-bold text-brand">
+            How much in one day
+          </h2>
+          <p className="mt-1 text-ink-soft">
+            Added up from the strength and the daily marks on the paper, across every medicine.
+          </p>
+          <div className="mt-4 grid gap-3">
+            {totals.map((t) => {
+              const pct = Math.min(100, Math.round((t.mgPerDay / t.limitMg) * 100));
+              return (
+                <div key={t.ingredient} className="rounded-lg border border-paper-deep bg-white p-5">
+                  <div className="flex flex-wrap items-baseline justify-between gap-2">
+                    <p className="font-semibold capitalize text-ink">{t.labelEn}</p>
+                    <p className={`font-semibold ${t.over ? "text-danger" : "text-safe"}`}>
+                      {formatMg(t.mgPerDay)} of {formatMg(t.limitMg)} a day
+                      {t.over ? ", over the limit" : ", within the limit"}
+                    </p>
+                  </div>
+                  <div
+                    className="mt-3 h-3 overflow-hidden rounded-full bg-paper-deep"
+                    role="img"
+                    aria-label={`${formatMg(t.mgPerDay)} out of a ${formatMg(t.limitMg)} daily limit`}
+                  >
+                    <motion.div
+                      initial={{ width: 0 }}
+                      animate={{ width: `${pct}%` }}
+                      transition={{ duration: 0.6 }}
+                      className={`h-full rounded-full ${t.over ? "bg-danger" : "bg-safe"}`}
+                    />
+                  </div>
+                  <p className="mt-2 text-base text-ink-soft">
+                    {t.parts.map((p) => `${p.name} ${formatMg(p.mgPerDay)}`).join(" + ")}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
+      {photo && boxed > 0 && (
+        <section aria-labelledby="photo-heading" className="mt-10">
+          <h2 id="photo-heading" className="text-lg font-bold text-brand">
+            Where Nuskha read it
+          </h2>
+          <p className="mt-1 text-ink-soft">
+            Tap a box to jump to that medicine. Check each line against your paper.
+          </p>
+          <div ref={photoRef} className="relative mt-4 overflow-hidden rounded-lg border border-paper-deep bg-white">
+            {/* eslint-disable-next-line @next/next/no-img-element -- a local data URL, nothing for next/image to optimize */}
+            <img src={photo} alt="Your prescription photo" className="block h-auto w-full" />
+            {result.medicines.map((med, i) => {
+              if (!med.raw.box) return null;
+              const [ymin, xmin, ymax, xmax] = med.raw.box;
+              const active = selected === i;
+              const warned = seriousFlags.some((f) => f.medicineIndices.includes(i));
+              return (
+                <button
+                  key={`box-${i}`}
+                  type="button"
+                  onClick={() => showCard(i)}
+                  aria-label={`${med.raw.name}: show its explanation`}
+                  aria-pressed={active}
+                  className={`absolute rounded-sm border-2 transition-colors ${
+                    active
+                      ? "border-accent bg-accent/20"
+                      : warned
+                        ? "border-danger/80 bg-danger/5 hover:bg-danger/15"
+                        : "border-brand/70 bg-brand/5 hover:bg-brand/15"
+                  }`}
+                  style={{
+                    top: `${ymin / 10}%`,
+                    left: `${xmin / 10}%`,
+                    height: `${(ymax - ymin) / 10}%`,
+                    width: `${(xmax - xmin) / 10}%`,
+                    minHeight: 24,
+                  }}
+                >
+                  <span
+                    className={`absolute -top-3 left-0 rounded px-1.5 text-xs font-bold text-white ${
+                      active ? "bg-accent-deep" : warned ? "bg-danger" : "bg-brand"
+                    }`}
+                  >
+                    {i + 1}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
       <section aria-label="Medicines" className="mt-10">
         <h2 className="text-lg font-bold text-brand">Each medicine</h2>
         <div className="mt-4 grid gap-4">
           {result.medicines.map((med, i) => (
             <motion.article
               key={`${med.raw.name}-${i}`}
+              id={`med-${i}`}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.35, delay: 0.1 + i * 0.05 }}
-              className="rounded-lg border border-paper-deep bg-white p-5"
+              className={`scroll-mt-6 rounded-lg border bg-white p-5 transition-shadow ${
+                selected === i ? "border-accent shadow-[0_0_0_3px_rgba(184,92,0,0.25)]" : "border-paper-deep"
+              }`}
             >
               <div className="flex flex-wrap items-baseline justify-between gap-2">
                 <h3 className="text-xl font-bold text-ink">
+                  {photo && med.raw.box && (
+                    <span className="mr-2 text-base font-semibold text-ink-soft">{i + 1}.</span>
+                  )}
                   {med.raw.name}
                   {med.raw.strength && (
                     <span className="ml-2 font-medium text-ink-soft">{med.raw.strength}</span>
@@ -164,7 +314,7 @@ export default function ResultPage() {
                 )}
               </div>
 
-              <div className="mt-3 flex flex-wrap gap-2" aria-label="Daily schedule">
+              <div className="mt-3 flex flex-wrap items-center gap-2" aria-label="Daily schedule">
                 {(["Morning", "Afternoon", "Night"] as const).map((slot, idx) => (
                   <span
                     key={slot}
@@ -180,7 +330,22 @@ export default function ResultPage() {
                     </span>
                   </span>
                 ))}
+                {med.raw.unitsPerDose && med.raw.unitsPerDose !== 1 && (
+                  <span className="rounded-md bg-accent/10 px-3 py-1 text-sm font-semibold text-accent-deep">
+                    {med.raw.unitsPerDose} at a time
+                  </span>
+                )}
               </div>
+
+              {photo && med.raw.box && (
+                <button
+                  type="button"
+                  onClick={() => showOnPhoto(i)}
+                  className="mt-3 inline-flex min-h-11 items-center gap-2 font-medium text-brand underline underline-offset-4 hover:text-brand-deep"
+                >
+                  Show where it was read
+                </button>
+              )}
 
               {med.raw.instructions && (
                 <p className="mt-3 text-ink">
@@ -269,7 +434,7 @@ export default function ResultPage() {
           {speaking ? "Stop" : "Hear it in Urdu"}
         </button>
         <a
-          href={`https://wa.me/?text=${encodeURIComponent(whatsappText(result))}`}
+          href={`https://wa.me/?text=${encodeURIComponent(whatsappText(result, flags))}`}
           target="_blank"
           rel="noreferrer"
           className="inline-flex min-h-14 items-center justify-center gap-3 rounded-lg bg-brand px-8 text-lg font-semibold text-white transition-colors hover:bg-brand-deep"
@@ -277,6 +442,14 @@ export default function ResultPage() {
           <WhatsAppIcon />
           Send to WhatsApp
         </a>
+        <button
+          type="button"
+          onClick={() => downloadCalendar(result)}
+          className="inline-flex min-h-14 items-center justify-center gap-3 rounded-lg border border-brand/30 bg-white px-8 text-lg font-semibold text-brand transition-colors hover:bg-paper"
+        >
+          <CalendarIcon />
+          Add reminders to calendar
+        </button>
         <Link
           href="/"
           className="inline-flex min-h-14 items-center justify-center rounded-lg border border-brand/30 bg-white px-8 text-lg font-semibold text-brand transition-colors hover:bg-paper"
@@ -291,7 +464,97 @@ export default function ResultPage() {
             : "This device has no Urdu voice installed, so the reading may sound unclear. On Android, add Urdu in Settings, Text-to-speech, Google speech engine."}
         </p>
       )}
+      {calendarNote && (
+        <p role="status" className="mt-4 max-w-xl text-base text-ink">
+          {calendarNote} Dose times are set to 8 am, 2 pm and 9 pm. Change them in your calendar if your doctor said otherwise.
+        </p>
+      )}
     </Shell>
+  );
+}
+
+function ProfilePanel({
+  profile,
+  activeCount,
+}: {
+  profile: ReturnType<typeof useProfile>;
+  activeCount: number;
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <section aria-labelledby="profile-heading" className="mt-6 rounded-lg border border-paper-deep bg-white">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        aria-controls="profile-body"
+        className="flex min-h-14 w-full items-center justify-between gap-3 px-5 py-3 text-left hover:bg-paper"
+      >
+        <span>
+          <span id="profile-heading" className="block font-semibold text-brand">
+            About you
+            <span dir="rtl" lang="ur" className="font-urdu mr-0 ml-2 font-normal text-ink-soft">آپ کے بارے میں</span>
+          </span>
+          <span className="block text-base text-ink-soft">
+            {activeCount > 0
+              ? `Checking against ${activeCount} thing${activeCount === 1 ? "" : "s"} you told us`
+              : "Tell Nuskha about you for warnings that fit you"}
+          </span>
+        </span>
+        <svg
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          className={`shrink-0 text-brand transition-transform ${open ? "rotate-180" : ""}`}
+          aria-hidden="true"
+        >
+          <path d="m6 9 6 6 6-6" />
+        </svg>
+      </button>
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div
+            id="profile-body"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.25 }}
+            className="overflow-hidden"
+          >
+            <div className="border-t border-paper-deep px-5 pb-5 pt-3">
+              <div className="grid gap-1 sm:grid-cols-2">
+                {PROFILE_FIELDS.map((field) => (
+                  <label
+                    key={field.key}
+                    className="flex min-h-12 cursor-pointer items-center gap-3 rounded-md px-2 hover:bg-paper"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={profile[field.key]}
+                      onChange={(e) => setProfileField(field.key, e.target.checked)}
+                      className="h-5 w-5 shrink-0 accent-brand"
+                    />
+                    <span>
+                      <span className="block text-ink">{field.en}</span>
+                      <span dir="rtl" lang="ur" className="font-urdu block text-left text-base leading-loose text-ink-soft">
+                        {field.ur}
+                      </span>
+                    </span>
+                  </label>
+                ))}
+              </div>
+              <p className="mt-3 text-sm text-ink-soft">
+                Saved only on this device. Warnings update straight away.
+              </p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </section>
   );
 }
 
@@ -323,10 +586,10 @@ function Shell({ children }: { children: React.ReactNode }) {
   );
 }
 
-function buildSpeechText(result: AnalysisResult): string {
+function buildSpeechText(result: AnalysisResult, flags: SafetyFlag[]): string {
   const parts: string[] = [];
   parts.push("آپ کے نسخے کی وضاحت");
-  const serious = result.flags.filter((f) => f.severity !== "info");
+  const serious = flags.filter((f) => f.severity !== "info");
   if (serious.length > 0) {
     parts.push("توجہ دیں: " + serious.map((f) => f.titleUr).join("۔ "));
   }
@@ -390,6 +653,16 @@ function StopIcon() {
   return (
     <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
       <rect x="6" y="6" width="12" height="12" rx="1.5" />
+    </svg>
+  );
+}
+
+function CalendarIcon() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <rect x="3.5" y="5" width="17" height="15" rx="1.5" />
+      <path d="M3.5 10h17M8 3v4M16 3v4" />
+      <path d="M12 13v3l2 1" />
     </svg>
   );
 }

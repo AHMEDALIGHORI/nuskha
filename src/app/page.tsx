@@ -14,6 +14,8 @@ import {
   saveToHistory,
   type HistoryEntry,
 } from "@/lib/history";
+import { useProfile } from "@/lib/profile";
+import { allFlags } from "@/lib/review";
 
 type Status = "idle" | "processing" | "error";
 
@@ -31,13 +33,14 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [busySample, setBusySample] = useState<string | null>(null);
   const history = useHistory();
+  const profile = useProfile();
 
   function openPast(entry: HistoryEntry) {
     openReading(entry.result);
     router.push("/result");
   }
 
-  async function analyze(body: Record<string, unknown>) {
+  async function analyze(body: Record<string, unknown>, photo?: string) {
     setStatus("processing");
     setStage(0);
     setError(null);
@@ -56,7 +59,7 @@ export default function Home() {
         setStatus("error");
         return;
       }
-      openReading(data.result);
+      openReading(data.result, photo);
       saveToHistory(data.result);
       // Next keeps this page mounted in the background after navigating, so reset
       // to idle in the same transition. Coming back then shows the start screen.
@@ -83,7 +86,7 @@ export default function Home() {
     }
     try {
       const image = await photoToDataUrl(file);
-      await analyze({ image });
+      await analyze({ image }, image);
     } catch {
       setError("Could not open that photo. Try taking it again.");
       setStatus("error");
@@ -256,7 +259,7 @@ export default function Home() {
                   </p>
                   <ul className="mt-4 grid gap-3">
                     {history.map((entry) => {
-                      const warnings = entry.result.flags.filter(
+                      const warnings = allFlags(entry.result, profile).filter(
                         (f) => f.severity !== "info"
                       ).length;
                       return (

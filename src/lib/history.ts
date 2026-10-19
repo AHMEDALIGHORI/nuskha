@@ -75,8 +75,17 @@ export function clearHistory(): void {
   write([]);
 }
 
-export function openReading(result: AnalysisResult): void {
+// The photo is kept only for this tab (sessionStorage), never in the saved history,
+// so the result page can show where each medicine was read. Opening a past reading
+// or a sample clears it, so a stale photo never sits next to the wrong reading.
+export function openReading(result: AnalysisResult, photo?: string): void {
   sessionStorage.setItem("nuskha-result", JSON.stringify(result));
+  try {
+    if (photo) sessionStorage.setItem("nuskha-photo", photo);
+    else sessionStorage.removeItem("nuskha-photo");
+  } catch {
+    sessionStorage.removeItem("nuskha-photo");
+  }
 }
 
 export function historyTitle(result: AnalysisResult): string {

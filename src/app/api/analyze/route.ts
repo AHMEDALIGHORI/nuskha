@@ -29,6 +29,15 @@ const EXTRACTION_SCHEMA = {
           },
           instructions: { type: Type.STRING },
           confidence: { type: Type.STRING, enum: ["high", "medium", "low"] },
+          units_per_dose: {
+            type: Type.NUMBER,
+            description: "Tablets or units each time. 1 unless written otherwise",
+          },
+          box_2d: {
+            type: Type.ARRAY,
+            items: { type: Type.INTEGER },
+            description: "[ymin, xmin, ymax, xmax] of this medicine's line, normalized 0-1000",
+          },
         },
         required: ["name", "schedule"],
       },
@@ -44,6 +53,8 @@ Extract every medicine on it. For each one return:
 - schedule: three booleans [morning, afternoon, night]. Pakistani doctors write this as 1+0+1 or 1-0-1, or as marks over three columns. A 1 or a mark means a dose at that time; 0 means none.
 - instructions: anything written about food, duration, or use of that medicine, such as "after meal" or "x 5 days". Leave it empty if nothing is written for that medicine. Never put lab tests or follow-up notes here, such as "INR check after 3 days", "repeat CBC" or "review after a week", even when they share a line with the medicine.
 - confidence: how sure you are that you read the name correctly.
+- units_per_dose: how many tablets or units each time. 2+0+2 or "2 tabs" means 2, "half" or ½ means 0.5. Use 1 when nothing says otherwise.
+- box_2d: the box around this medicine's whole handwritten line on the photo, as [ymin, xmin, ymax, xmax] scaled 0 to 1000.
 Rules: return only medicines. Skip patient names, dates, clinic details, advice lines and signatures. If a word is unclear, make your best guess and lower the confidence. Never invent a medicine that is not on the paper. If the photo is not a prescription, return an empty list.`;
 
 export async function POST(req: NextRequest) {
@@ -198,8 +209,25 @@ function sanitize(raw: unknown): ExtractedMedicine[] {
           ? m.instructions.trim().slice(0, 120)
           : undefined,
       confidence,
+      unitsPerDose: sanitizeUnits(m.units_per_dose),
+      box: sanitizeBox(m.box_2d),
     });
     if (out.length >= MAX_MEDICINES) break;
   }
   return out;
+}
+
+function sanitizeUnits(raw: unknown): number | undefined {
+  if (typeof raw !== "number" || !Number.isFinite(raw)) return undefined;
+  if (raw < 0.25 || raw > 4 || raw === 1) return undefined;
+  return Math.round(raw * 4) / 4;
+}
+
+function sanitizeBox(raw: unknown): [number, number, number, number] | undefined {
+  if (!Array.isArray(raw) || raw.length !== 4) return undefined;
+  const nums = raw.map((v) => (typeof v === "number" ? Math.round(v) : NaN));
+  if (nums.some((v) => !Number.isFinite(v) || v < 0 || v > 1000)) return undefined;
+  const [ymin, xmin, ymax, xmax] = nums;
+  if (ymax <= ymin || xmax <= xmin) return undefined;
+  return [ymin, xmin, ymax, xmax];
 }
